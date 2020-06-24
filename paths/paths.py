@@ -3,6 +3,7 @@
 ############################
 
 import os
+import socket
 
 bases = {"ss": "/media/daten/arnold/josephus",
          "super": "/home/josephus/Downloads",
@@ -49,7 +50,16 @@ paths = {
     "backup": backup
 }
 
+computers = {
+    "josephus-super": "super",
+    "work": "work",
+    "pharma2-53": "ss",
+    "work1": "backup"
+}
 
+computer = computers[socket.gethostname()]
+
+p = paths[computer]
 
 
 
