@@ -1,1 +1,1 @@
-from .paths import *
+from .paths import paths
