@@ -42,7 +42,7 @@ backup = {
     "results": os.path.join(bases['backup'], 'data', 'galaxy_2019_Nov', 'results')
 }
 
-p = {
+paths = {
     "ss": ss,
     "super": sup,
     "work": work,
