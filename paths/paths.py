@@ -22,7 +22,7 @@ computer = computers[socket.gethostname()]
 
 
 ############################
-# chipseqproject
+# p_chipseq
 ############################
 
 bases = {"ss": "/media/daten/arnold/josephus",
@@ -70,7 +70,23 @@ paths = {
     "backup": backup
 }
 
-p_chipseqproject = paths[computer]
+class Paths:
+    def __init__(self, computer):
+        self.base_dir = {'ss': '/media/daten/arnold/josephus',
+                         'work': '/media/josephus/My Book',
+                         'backup': '/media/josephus/mybook',
+                         'super': '/home/josephus/Downloads'}[computer]
+        self.gal_dir = os.path.join(self.base_dir, 'data', 'galaxy_2019_Nov')
+        # in 'work' the 'data' must disappear!
+        self.model_dir = os.path.join(self.base_dir, 'model')
+        self.genome_dir = os.path.join(self.base_dir, 'genome')
+        self.out_dir = os.path.join(self.gal_dir, 'results')
+        if computer == "work":
+            self.gal_dir = self.gal_dir.replace("/data/", "/")
+            self.genome_dir = "/media/josephus/archive_big/genome"
+
+p_chipseq_ = Paths(computer)
+p_chipseq = paths[computer]
 
 
 
