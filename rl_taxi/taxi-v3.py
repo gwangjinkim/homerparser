@@ -183,21 +183,127 @@ print_frames(frames)
 # enter RL
 ##################################
 
+# Q-table stores Q-values which map a (state, action) combination
+# Q-value for a particular state-action combination is "quality" of an action
+# better Q-value -> greater rewards
+
+# e.g. when passenter at current destination, Q-value for 'pickup' is higher
+
+# initial Q-values are arbitrary
+# but gets updated:
+
+# Q(state, action) <- (1-alpha)*Q(state,action) + alpha*(reward + gamma*maxQ_a(next_state, all_actions))
+
+# alpha is learning rate (0 < alpha <= 1)
+# gamma is discount factor (0 <= gamma <= 1)
+#    how much importance to give to future rewards
+#    ~ 1 -> long-term effective award
+#    ~ 0 -> only immediate award (greedy)
+
+
+# Q-table is a matrix 
+# row states (500) x col actions (6)
+# initial values: 0
+
+# values are updated after training
+
+# optimize the agent's traversal through the environment for maximum rewards
+
+"""
+0. initialize Q-table by all zeros
+1. start exploring actions: For each state, select any one among all possible actions
+   for the current state (S).
+2. travel to the next state (S') as a result of that action (a).
+3. for all possible actions from the state (S') select the one with the highest Q value.
+4. update Q-table values using the equation.
+5. set the next state as the current state.
+6. if goal state is reached, then end and repeat the process.
+
+after enough random exploration of actions,
+Q-table will converge to a action-value function which can exploit to pick the most
+optimal action from a given state.
+
+There's a tradeoff between exploration (choosing random action)
+and exploitation (choosing actions based on already learned Q-values).
+
+We want to prevent action from always taking the same route,
+and possibly overfifting.
+
+So epsilon is introduced to cater to this during training.
+
+Instead of just selecting the best learned Q-value action, we sometimes favor
+exploring the action space further.
+
+Lower epsilon value results in episodes with more penalties (on average)
+- obvious because we are exploring and making random decisions.
+"""
+
+
+#########################################
+# Implementing Q-learning in python
+#########################################
+
+# training the agent
+
+import numpy as np
+q_table = np.zeros([env.observation_space.n, env.action_space.n])
 
 
 
+%time
+"""Training the agent"""
+
+import random
+from IPython.display import clear_output
+
+# Hyperparameters
+alpha = 0.1
+gamma = 0.6
+epsilon = 0.1
+
+# for plotting metrics
+all_epochs = []
+all_penalties = []
+
+for i in range(1, 100001):
+    state = env.reset()
+    
+    epochs, penalties, reward = 0, 0, 0
+    done = False
+    
+    while not done:
+        if random.uniform(0, 1) < epsilon:
+            action = env.action_space.sample() # explore action space
+        else:
+            action = np.argmax(q_table[state]) # exploit learned values
+        
+        next_state, reward, done, info = env.step(action)
+        
+        old_value = q_table[state, action]
+        next_max = np.max(q_table[next_state])
+        
+        new_value = (1-alpha) * old_value + alpha * (reward + gamma * next_max)
+        q_table[state, action] = new_value
+        
+        if reward == -10:
+            penalties += 1
+        
+        state = next_state
+        epochs += 1
+    
+    if i % 100 == 0:
+        clear_output(wait=True)
+        print(f"Episode: {i}")
+        
+print("Training finished.\n")
+
+# Now that Q-table has been established over 100000 episodes
+q_table[328]
+# array([ -2.40230653,  -2.27325184,  -2.40828582,  -2.3599973 ,
+#        -10.81195156,  -9.42292528])
 
 
-
-
-
-
-
-
-
-
-
-
+# so north is best
 
 
 
