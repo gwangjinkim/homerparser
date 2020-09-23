@@ -620,7 +620,7 @@ env = gym.make('bubbleshooter-v0')
 # https://www.novatec-gmbh.de/en/blog/deep-q-networks
 
 
-
+"""
 
 taxi
 https://www.novatec-gmbh.de/en/blog/introduction-to-q-learning
@@ -637,15 +637,107 @@ https://www.novatec-gmbh.de/en/blog/creating-a-gym-environment/
 # CartPole-v1 env
 
 
+# implement the agent
+
+agent.train()
+
+initialize class by creating env and adopting all its specific envs
+ignore memory and batchsize for now (required for experience replay)
+gamma: discount-factor
+learning-rate with decay need for optimize of our DNN
+win_threshold - determines whether and env is solved
+
+for carpole game agent has to score ~195 over 100 consecutive trials
+taxi game is solved if value exceeds 9.7
+
+"""
 
 
+import gym
+from collections import deque
+
+# model
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.optimizers import Adam
+
+import numpy as np
+
+import random
+
+class DQNAgent():
+    def __init__(self, env_id, path, episodes,
+                 max_env_steps,
+                 win_threshold,
+                 epsilon_decay,
+                 state_size=None,
+                 action_size=None,
+                 epsilon=1.0,
+                 epsilon_min=0.01,
+                 gamma=1,
+                 alpha=.01,
+                 alpha_decay=.01,
+                 batch_size=16,
+                 prints=False):
+        self.memory = deque(maxlen=100000)
+        self.env = gym.make(env_id)
+        
+        if state_size is None:
+            self.state_size = self.env.observation_space.n
+        else:
+            self.state_size = state_size
+        
+        if action_size is None:
+            self.action_size = self.env.action_space.n
+        else:
+            self.action_size = action_size
+        
+        self.episodes = episodes
+        self.env._max_episode_steps = max_env_steps
+        self.win_threshold = win_threshold
+        self.epsilon = epsilon
+        self.epsilon_decay = epsilon_decay
+        self.epsilon_min = epsilon_min
+        self.gamma = gamma
+        self.alpha = alpha
+        self.alpha_decay = alpha_decay
+        self.batch_size = batch_size
+        self.path = path                 # model_fpath
+        self.prints = prints             # print_his_scores?
+        self.model = self._build_model()
 
 
-
-
-
-
-
+    # model creator
+    def _build_model(self):
+        model = Sequential()
+        model.add(Dense(24, input_dim=self.state_size, activation="tanh"))
+        model.add(Dense(48, activation="tanh"))
+        model.add(Dense(self.action_size, activation='linear'))
+        model.compile(loss="mse",
+                      optimizer=Adam(lr=self.alpha, decay=self.alpha_decay))
+        return model
+    # act method iither random action or use model to predict highest Q-value
+    def act(self, state):
+        if (np.random.ranom() <= self.epsilon):
+            return self.env.action_space.sample()
+        else:
+            return np.argmax(self.model.predict(state))
+    
+    def remember(self, state, action, reward, next_state, done):
+        self.memory.append((state, action, reward, next_state, done))
+    
+    def replay(self, batch_size):
+        x_batch, y_batch = [], []
+        minibatch = random.sample(self.memory, min(len(self.memory), batch_size)
+        for state, action, reward, next_state, done in minibatch:
+            y_target = self.model.predict(state)
+            y_target[0][action] = rward if done else reward + self.gamm * np.max(self.model.predict(next_state)[0])
+            x_batch.append(state[0])
+            y_batch.append(y_target[0])
+        self.model.fit(np.array(x_batch), np.array(y_batch), batch_size=len(x_batch), verbose=0)
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *=self.epsilon_decay
+    
 
 
 
