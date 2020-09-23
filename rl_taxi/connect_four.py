@@ -738,8 +738,9 @@ class DQNAgent():
         if self.epsilon > self.epsilon_min:
             self.epsilon *=self.epsilon_decay
     
-
-
+# github repos:
+# https://github.com/phossen/reinforcement-learning-1
+# https://github.com/phossen/reinforcement-learning-2
 
 
 
