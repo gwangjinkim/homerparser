@@ -194,6 +194,455 @@ get_win_percentages(agent1=agent, agent2="random") # 98% against 2% win!
 
 
 
+#####################################
+# deep RL
+#####################################
+
+# instead of Q-table we use
+# an MLP/ANN
+# input: board (list)
+# output: next move col 0 - 6
+
+"""
+after each move, agent gets a reward:
+
+IF agent wins game in that move:  +1  reward
+ELSE IF agent plays invalid move: -10 reward
+ELSE IF opponent wins:            -1  reward
+ELSE:                             1/42 reward
+
+# at end of game, agent adds up its reward -> cumulative reward
+# game lasted 8 moves 3*(1/42)+1
+# 11 moves (opponent went first, so agent 5 times) and opponent won:
+#                      4*(1/42)-1
+# draw after 21 moves  21*(1/42)
+# game lasted 7 moves, ended because agent selecting invalid move
+#                       3*(1/42) - 10
+
+goal: find weights of NN that (on average) maximiaze agent's cumulative reward.
+
+the idea of using reward to track the performance of an agent
+is core ide of RL.
+once we define problem in this way, we can use any of a variety of RL algos
+ to produce an agent.
+
+RL
+
+DQN
+A2C
+PPO
+
+- all weights initially random
+- agent plays game, continually tries out new values for weights
+  to see how cumulative reward is affected on average
+  after many times algo converges
+- algo tries to win the game (final reward +1)
+       avids -1 and -10
+       tries to make game last as long as possible (1/42)
+Idea of 1/42 bonus is help alog to converge better
+'temporal credit assignment problem'
+'reward shaping'
+
+PPO proximal policy optimization algo to create an agent
+
+Stable Baselines is not yet compatible with TensorFlow 2.0.
+so we begin by downgreading to TensorFlow 1.0
+"""
+
+import tensorflow as tf
+tf.__version__
+# 1.15.0
+
+# environment has to be made compatible with Stable Baselines
+# for that: ConnectFourGym class below
+# it implements ConnectX as an OpenAI Gym env
+# that uses several methods:
+
+"""
+reset() - returns starting random board as 2d numpy arry 6 rows 7 cols
+change_reward() - customizeds rewards that agent receives
+step(action) - play agent's action choice
+               it returns: resulting game board as np array
+                           agent's reward of most recent move (+1 -10, -1, 1/42)
+                           done - game ended?
+
+how to define envs:
+https://stable-baselines.readthedocs.io/en/master/guide/custom_env.html
+
+"""
+
+
+#################################
+# env
+#################################
+
+from kaggle_environments import make, evaluate
+from gym import spaces
+
+class ConnectFourGym:
+    def __init__(self, agent2="random"):
+        ks_env = make("connectx", debug=True)
+        self.env = ks_env.train([None, agent2])
+        self.rows = ks_env.configuration.rows
+        self.columns = ks_env.configuration.columns
+        # learn about spaces here: http://gym.openai.com/docs/#spaces
+        self.action_space = spaces.Discrete(self.columns)
+        self.observation_space = spaces.Box(low=0, high=2,shape=(self.rows, self.column, 1), dtype=np.in)
+        # tuple corresponding to min max possible rewards
+        self.reward_range = (-10 1)
+        #StableBaselines throws error if these not defined
+        self.spec = None
+        self.metadata = None
+    def reset(self):
+        self.obs = self.env.reset()
+        return np.array(self.obs['board']).reshape(self.rows, self.columns, 1)
+    def change_reward(self, old_reward, done):
+        if old_reward == 1: # the agent won the game
+            return 1
+        elif done: # the opponent won
+            return -1
+        else: # reward 1/42
+            return 1/(self.rows*self.columns)
+    def step(self, action):
+        # check if agent's move is valid
+        is_valid = (self.obs['board'][int(action)] == 0)
+        if is_valid: # play the move
+            self.obs, old_reward, done, _ = self.env.step(int(action))
+            reward = self.change_reward(old_reward, done)
+        else: # end the game and penalize agent
+            reward, done, _ = -10, True, {}
+        return np.array(self.obs['board']).reshape(self.rows, self.colums, 1), reward, done, _
+        
+
+
+
+
+# create connectfour environment
+env = ConnectFourGym(agent2="random")
+
+# stable baselines requires us to work with "vectorized" environments.
+# for this, we can use the DummyVecEnv class
+
+# the Monitor class lets us watch how the agent's performance gradually improves
+# as it plays more and more games
+
+"""
+!pip install stable_baselines
+
+"""
+
+import os
+from stable_baselines.bench import Monitor
+from stable_baselines.common.vec_env import DummyVecEnv
+
+# create directory for logging training info
+log_dir = "ppo/"
+os.makedirs(log_dir, exist_ok=True)
+
+# logging progress
+monitor_env = Monitor(env, log_dir, allow_early_resets=True)
+
+# create vectorized environment
+vec_env = DummyVecEnv([lambda: monitor_env])
+
+# the next step is to specify the architecture of the NN
+# here a CNN
+# more about specify architectures with StableBaselines 
+# https://stable-baselines.readthedocs.io/en/master/guide/custom_policy.html
+
+# PPO algorithm, our network will output some additional info
+# "value" of the input.
+# read about "actor-critic networks" if curious.
+
+
+
+from stable_baselines import PPO1
+from stable_baselines.a2c.utils import conv, linear, conv_to_fc
+from stable_baselines.common.policies import CnnPolicy
+
+# NN for predicting action values
+def modified_cnn(scaled_images, **kwargs):
+    activ = tf.nn.relu
+    layer_1 = activ(conv(scaled_images, 
+                         "c1", 
+                         n_filters=32, 
+                         filter_size=3, 
+                         stride=1,
+                         init_scale=np.sqrt(2),
+                         **kwargs))
+    layer_2 = activ(conv(layer_1,
+                         'c2',
+                         n_filters=64,
+                         filter_size=3,
+                         stride=1,
+                         init_scale=np.squrt(2),
+                         **kwargs))
+    layer_2 = conv_to_fc(layer_2)
+    return activ(linear(layer_2,
+                        'fc1',
+                        n_hidden=512,
+                        init_scale=np.sqrt(2)))
+
+class CustomCnnPolicy(CnnPolicy):
+    def __init__(self, *args, **kwargs):
+        super(CustomCnnPolicy, self).__init__(*args, **kwargs, cnn_extractor=modified_cnn)
+
+# initialize agent
+model = PPO1(CustomCnnPolicy, vec_env, verbose=0)
+
+"""
+weights are set randomly
+
+'train agent' means find weight so NN likely to result in agent selecting good moves.
+"""
+
+"""
+# Train agent
+"""
+
+model.learn(total_timesteps=100000)
+
+# plot cumulative reward
+with open(os.path.join(log_dir, "monitor.csv"), 'rt') as fh:
+    firstline = fh.readline()
+    assert firstline[0] == "#"
+    df = pd.read_csv(fh, idnex_col=None)['r']
+
+df.rolling(window=1000).mean().plot()
+plt.show()
+
+# finally, specify the trained agent in format required for competition
+def agent1(obs, config):
+    # use best model to select a column
+    col, _ = model.predict(np.array(obs['board']).reshape(config.rows, config.columns, 1))
+    # check if selected column is valid
+    is_valid = (obs['borad'][int(col)] == 0)
+    # if not valid, select random move
+    if is_valid:
+        return int(col)
+    else:
+        return random.choice([col for col in range(config.columns) if obs.board[int(col)] == 0])
+
+# see outcome of one game round against random agent
+
+
+
+# create game env
+env = make("connectx")
+
+# two random agents play one game round
+env.run([agent1, "random"])
+
+# show the game
+env.render(mode="ipython")
+
+get_win_percentages(agent1=agent1, agent2="random")
+# Agent 1 Win Percentage: 0.73
+# Agent 2 Win Percentage: 0.27
+# Number of Invalid Plays by Agent 1: 0
+# Number of Invalid Plays by Agent 2: 0
+
+# only trained to beat "random"
+# self-play
+# https://openai.com/blog/competitive-self-play/
+# will give better results
+
+# free further
+# https://www.youtube.com/watch?v=2pWv7GOvuf0
+# http://www.incompleteideas.net/book/RLbook2018.pdf
+# https://github.com/dennybritz/reinforcement-learning
+# https://sites.google.com/corp/view/deep-rl-bootcamp/lectures
+
+
+
+
+
+
+
+
+################################################################################
+
+# https://www.intel.com/content/www/us/en/artificial-intelligence/posts/demystifying-deep-reinforcement-learning.html?wapkw=demystifying%20deep%20reinforcement%20learning
+
+
+
+
+
+
+
+intro: https://github.com/keon/deep-q-learning
+
+code explained: https://keon.io/deep-q-learning/
+
+keon has interesting 
+blogs
+
+also korean book
+https://github.com/keon/3-min-pytorch
+
+especially algorithms - python3
+# there the graph section is super interesting!!
+https://github.com/keon/algorithms
+
+and awesome nlp
+https://github.com/keon/awesome-nlp
+
+
+
+
+
+
+
+
+
+
+
+################################################################################
+
+################################################
+# creating gym environment
+################################################
+
+# https://www.novatec-gmbh.de/en/blog/creating-a-gym-environment/
+
+
+
+
+################################
+# installing gym
+################################
+
+"""
+git clone https://github.com/openai/gym
+cd gym pip install -e .
+
+# for this special calse we need pygame too, since bubble shooter is based
+# on it (you can skip this in other cases)
+
+python3 -m pip install -U pygame --user
+"""
+
+
+#################################
+# setup package structure
+#################################
+
+"""
+gym environments come in pip package structure
+
+mkdir -p gym-bubbleshooter/gym_bubbleshooter/env
+touch gym-bubbleshooter/README.md # can contain short description of your env
+
+nano gym-bubbleshooter/setup.py
+
+'''
+m setuptools import setup
+
+setup(name='gym_bubbleshooter,
+      version='0.1',
+      install_requires=['gym', 'numpy', 'pygame']
+)
+'''
+
+nano gym-bubbleshooter/gym_bubbleshooter/__init__.py
+
+'''
+from gym.envs.registration import register
+
+register(id='BubbleShooter-v0', 
+    entry_point='gym_bubbleshooter.envs:BubbleShooterEnv', 
+)
+'''
+
+nano gym-bubbleshooter/gym_bubbleshooter/envs/__init__.py
+
+'''
+m gym_bubbleshooter.envs.bubbleshooter_env import BubbleShooterEnv
+'''
+
+core of the env is:
+gym-bubbleshooter/gym_bubbleshooter/envs/bubbleshooter_env.py
+
+nano gym-bubbleshooter/gym_bubbleshooter/envs/bubbleshooter_env.py
+
+4 methods are needed for an gym env:
+1. __init__(): initialize class and set initial values
+2. step(): take steps and actions -> step env 1 step ahead
+   returning: - the next state
+              - the reward for that action
+              - boolean (episode is over?)
+              - and some other info
+3. reset(): reset state and return random state
+4. render(): visualize state of env in some form
+
+'''
+import gym
+from gym import error, spaces, utils
+from gym.utils import seeding
+
+class BubleShooterEnv(gym.Env):
+    metadata = {'render.modes': ['human']}
+    def __init__(self):
+        pass
+    def step(self, action):
+        pass
+    def reset(self):
+        pass
+    def render(self, mode='human', close=False):
+        pass
+
+'''
+
+separate the game logic from rendering, so that you can interact with
+the game using 'step()' instead of keyboard
+
+whole collision logic had to be rewritten
+
+look at other gym envs to get a feeling for how they work and their usage of spaces
+
+# after implementing, install the env
+pip install -e .
+"""
+
+port gym
+import gym_bubbleshooter
+env = gym.make('bubbleshooter-v0')
+
+
+
+################################
+# creating own environments
+################################
+
+# https://gym.openai.com/docs/
+
+
+# https://www.novatec-gmbh.de/en/blog/deep-q-networks
+
+
+
+
+taxi
+https://www.novatec-gmbh.de/en/blog/introduction-to-q-learning
+
+env
+https://www.novatec-gmbh.de/en/blog/deep-q-networks
+
+customized env
+https://www.novatec-gmbh.de/en/blog/creating-a-gym-environment/
+
+
+# observation-space: 10^174
+
+# CartPole-v1 env
+
+
+
+
+
+
+
+
 
 
 
