@@ -1,24 +1,29 @@
 # Installation
 
 ```
-pip install -e 'git+https://gwangjinkim@bitbucket.org/gwangjinkim/paths.git#egg=paths'
+pip install -e 'git+https://gwangjinkim@bitbucket.org/gwangjinkim/rl_taxi.git#egg=rl_taxi'
 ```
 
 # Usage
 
 ```
-from paths import p_chipseqproject
-
-# choose pathset for your project
-p = p_chipseqproject
-
-p['genome']
-p['results']
-p['galaxy']
-p['model']
 ```
 
 ```
-from paths import computer
-computer
+
+```
+
+```
+# document the version
+Linux:
+$ pip freeze | grep rl_taxi
+
+
+Windows:
+c:\> pip freeze | findstr rl_taxi
+
+
+# pip install sinfo
+# sinfo.sinfo()
+# # this gives only NA for locally installed packages
 ```

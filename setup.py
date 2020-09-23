@@ -1,12 +1,12 @@
 from setuptools import setup
 
 setup(
-    name="paths",
+    name="rl_taxi",
     version="0.0.1",
-    description="my paths",
-    packages=["paths"],
+    description="learning rl with Taxi-v3",
+    packages=["rl_taxi"],
     author="Gwang-Jin Kim",
     author_email="gwang.jin.kim.phd@gmail.com",
-    keywords=["paths", "bioinformatics"],
-    url="https://bitbucket.org/gwangjinkim/paths"
+    keywords=["reinforcement learning"],
+    url="https://bitbucket.org/gwangjinkim/rl_taxi"
 )
