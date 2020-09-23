@@ -306,12 +306,66 @@ q_table[328]
 # so north is best
 
 
+###################################
+# Evaluating agent
+###################################
+
+# no training so no exploration needed
+
+"""Evaluate agent's performance after Q-learning"""
+
+total_epochs, total_penalties = 0, 0
+episodes = 100
+
+for _ in range(episodes):
+    state = env.reset()
+    epochs, penalties, reward = 0, 0, 0
+    
+    done = False
+    
+    while not done:
+        action = np.argmax(q_table[state])
+        state, reward, done, info = env.step(action)
+        
+        if reward == -10:
+            penalties += 1
+        
+        epochs += 1
+    
+    total_penalties += penalties
+    total_epochs += epochs
+
+print(f"Results after {episodes} episodes:")
+print(f"Average timesteps per episode: {total_epochs / episodes}")
+print(f"Average penalties per episode: {total_penalties / episodes}")
 
 
+# Results after 100 episodes:
+# Average timesteps per episode: 13.27
+# Average penalties per episode: 0.0
 
+"""
+avg penalty per episode: the smaller the better - ideally zero or very close to zero
+avg number of timesteps per trip: the smaller the better
+avg rewards per move: the larger the better
 
+deciding rewards is a crucial parts of reinforcement learning.
+in our case, both timesteps and penalties are negatively rwarded
+a higher average reward would mean: agent reaches the destination as fast as possible with least
+penalties
+"""
 
+# hyperparameter optimization
 
+"""
+alpha (learning rate) should decrease as you learn more
+gamma (longterm reward) as you won't be longer around, gamma should decrease
+epsilon (exploration) as trials increase, epsilon should decrease
+
+comprehensive search function ~ grid search - 
+parameters optimizing reward/time_steps ratio
+
+fancy way would be using genetic algorithm
 
 
 
