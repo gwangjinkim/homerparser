@@ -127,6 +127,75 @@ env.P[328]
 # let program use P table only
 
 
+env.s = 328 # set env to illustration's state
+
+epochs = 0
+penalties, reward = 0, 0
+
+frames = [] # for animation
+
+done = False
+
+while not done:
+    action = env.action_space.sample()
+    state, reward, done, info = env.step(action)
+    
+    if reward == -10:
+        penalties += 1
+
+    # put each rendered frame into dict for animation
+    frames.append({
+        'frame': env.render(mode='ansi'),
+        'state': state,
+        'action': action,
+        'reward': reward
+    })
+    
+    epochs += 1
+
+print(f"Timesteps taken: {epochs}")
+print(f"Penalties incurred: {penalties}")
+
+# Timesteps taken: 5201
+# Penalties incurred: 1715
+
+
+# visualize
+
+from IPython.display import clear_output
+from time import sleep
+
+def print_frames(frames):
+    for i, frame in enumerate(frames):
+        clear_output(wait=True)
+        print(frame['frame'])
+        print(f"Timestep: {i + 1}")
+        print(f"State: {frame['state']}")
+        print(f"Action: {frame['action']}")
+        print(f"Reward: {frame['reward']}")
+        sleep(.1)
+
+print_frames(frames)
+
+
+
+##################################
+# enter RL
+##################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
