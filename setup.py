@@ -1,12 +1,12 @@
 from setuptools import setup
 
 setup(
-    name="rl_taxi",
+    name="homerparser",
     version="0.0.1",
-    description="learning rl with Taxi-v3",
-    packages=["rl_taxi"],
+    description="parser homer motif files",
+    packages=["homerparser"],
     author="Gwang-Jin Kim",
     author_email="gwang.jin.kim.phd@gmail.com",
-    keywords=["reinforcement learning"],
-    url="https://bitbucket.org/gwangjinkim/rl_taxi"
+    keywords=["chipseq", "NGS", "bioinformatics"],
+    url="https://bitbucket.org/gwangjinkim/homerparser"
 )
