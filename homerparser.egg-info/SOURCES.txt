@@ -1,0 +1,7 @@
+setup.py
+homerparser/__init__.py
+homerparser/main.py
+homerparser.egg-info/PKG-INFO
+homerparser.egg-info/SOURCES.txt
+homerparser.egg-info/dependency_links.txt
+homerparser.egg-info/top_level.txt
