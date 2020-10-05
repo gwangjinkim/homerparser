@@ -34,10 +34,10 @@ class HomerParser:
         
 
 def parse_all_motifs(homer_dir_path):
-    meme_fpaths = glob.glob(pathname=os.path.join(homer_dir_path, 
+    fpaths = glob.glob(pathname=os.path.join(homer_dir_path, 
                                                   "*.motif"), 
                             recursive=True)
-    d[meme.name] = meme
+    d = {x.name: x for x in [HomerParser(fp) for fp in fpaths]}
     return d
 
 # the properties are all properties not beginning with "__"
