@@ -13,12 +13,12 @@ class HomerParser:
                 self.consensus, self.full_name, self.max, self.value, self._, self.meta = \
                     line.replace(">", "").split("\t")
             elif line.strip() != "":
-                self.pwm.append([floor(x) for x in line.strip().split("\t")])
+                self.pwm.append([float(x) for x in line.strip().split("\t")])
             if "/" in self.full_name:
                 self.name = self.full_name.split("/")[0]
                 if "(" in self.name:
                     self.name = self.name.split("(")[0]
-            self.pwm = np.array(self.pwm)
+        self.pwm = np.array(self.pwm)
     
     def __iter__(self):
         self.iter_idx = 0
