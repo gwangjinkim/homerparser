@@ -19,6 +19,7 @@ class HomerParser:
                 if "(" in self.name:
                     self.name = self.name.split("(")[0]
         self.pwm = np.array(self.pwm)
+        self.w = len(self.pwm)
     
     def __iter__(self):
         self.iter_idx = 0
