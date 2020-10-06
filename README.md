@@ -1,3 +1,5 @@
+Parse homer known motif file
+
 # Installation
 
 ```
