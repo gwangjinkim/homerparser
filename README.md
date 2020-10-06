@@ -19,6 +19,6 @@ pip install -e 'git+https://gwangjinkim@bitbucket.org/gwangjinkim/rl_taxi.git#eg
 
 ```
 from homerparser import HomerParser, parse_all_motifs
-homer_known_dir = "path/to/homer_dir/with_memes"
+homer_known_dir = "path/to/homer_dir/with_motif_files"
 motifs = parse_all_motifs(homder_known_dir)
 ```
