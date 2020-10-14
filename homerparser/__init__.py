@@ -1,3 +1,3 @@
-from .main import parse_all_motifs
-from .main import HomerParser
+from .homerparser import parse_all_motifs
+from .homerparser import HomerParser
 
