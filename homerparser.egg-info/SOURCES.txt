@@ -2,6 +2,7 @@ README.md
 setup.py
 homerparser/__init__.py
 homerparser/homerparser.py
+homerparser/motifs_loader.py
 homerparser.egg-info/PKG-INFO
 homerparser.egg-info/SOURCES.txt
 homerparser.egg-info/dependency_links.txt
