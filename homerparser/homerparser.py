@@ -33,7 +33,7 @@ class HomerParser:
         else:
             raise StopIteration
     def __len__(self):
-	return len(self.pwm)
+        return len(self.pwm)
 
 def parse_all_motifs(homer_dir_path):
     fpaths = glob.glob(pathname=os.path.join(homer_dir_path, 
